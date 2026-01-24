@@ -1,0 +1,119 @@
+import { type Request, type Response, type NextFunction, json } from "express";
+import connection, { redisClient } from "../config/db"
+import City from "../models/city";
+import type { Filter } from "../types/requests";
+import type { response } from "../types/requests";
+import Country from "../models/country";
+import { getCityFromWiki } from "../wikiQueries/queries";
+import { Alert, Debug } from "../utils/logger";
+import { Info } from "../utils/logger";
+import { Error } from "../utils/logger";
+const nearme = async (req: Request, res: Response, next: NextFunction) => {
+    const forwardedFor = req.headers['x-forwarded-for'];
+    const ip = (typeof forwardedFor === 'string' ? forwardedFor : '').split(',')[0];
+    const coords = await fetch('http://ip-api.com/json/' + ip, {
+        headers: {
+            'User-Agent': 'curl/7.79.1'
+        }
+    })
+
+    const coordsResponse = (await coords.json()) as response
+
+    connection
+
+    const result = await City.find({
+        location: {
+            $near: {
+                $geometry: {
+                    type: "Point",
+                    coordinates: [coordsResponse.lon, coordsResponse.lat]
+                },
+                $maxDistance: 100000
+            }
+        }
+    }).limit(5).lean();
+
+    return res.json(result)
+}
+
+const getCity = async (req: Request, res: Response, next: NextFunction) => {
+
+    connection
+    let filter: Filter = {}
+    let city = req.query.city as string
+    let country = req.query.country as string
+    let minPopulation = Number(req.query.minPopulation)
+    let maxPopulation = Number(req.query.maxPopulation)
+    let pageSize = Number(req.query.pageSize)
+    let page = Number(req.query.page)
+    if (Number.isNaN(page)) page = 1
+    if (pageSize > 1000 || Number.isNaN(pageSize)) pageSize = 1000
+    let id = `key=${city ?? ""}-${country ?? ""}`
+    //const reply = await client.get(id)
+    // if (reply) return res.json(reply)
+    let countryId
+    let wikiRs
+    try {
+
+        if (!country) {
+            return res.status(301).json("country required")
+        }
+        country = country.toLowerCase().trim();
+        countryId = await Country.findOne(
+            { CountryLabel: country },
+            { _id: 1, wikiId: 1 }
+        ).lean();
+        filter.country = countryId?._id
+        if (city) {
+            city = city.toLowerCase().trim();
+            filter.cityLabel = city
+        }
+        if (!Number.isNaN(minPopulation)) {
+            filter.population = { ...(filter.population ?? {}), $gte: minPopulation };
+        }
+
+        if (!Number.isNaN(maxPopulation)) {
+            filter.population = { ...(filter.population ?? {}), $lte: maxPopulation };
+        }
+        const result = await City.find(filter, { _id: 0, country: 0 }).limit(pageSize)
+            .skip((page - 1) * pageSize);
+        //if there is not a response of an existing city in the db find the data on wiki
+
+        if (result.length == 0) {
+
+            wikiRs = await getCityFromWiki(countryId?.wikiId || "", city.charAt(0).toUpperCase() + city.slice(1));
+
+            const insert = await City.insertOne({
+                cityLabel: wikiRs?.cityLabel.toLocaleLowerCase(),
+                country: countryId?._id,
+                location: {
+                    type: "Point",
+                    coordinates: [wikiRs?.lon ?? 0, wikiRs?.lat ?? 0]
+                },
+                population: wikiRs?.population
+
+            })
+            Info(`the info of ${wikiRs?.cityLabel} has been added into db`)
+            Debug(`has been served info of ${wikiRs?.cityLabel}`)
+        }
+        Debug(`the info of ${id} has been served`)
+        console.log("alkjdshf")
+        // await client.set(id, JSON.stringify(result))
+        return res.json(result)
+    } catch (error) {
+        Error("unexperted error:" + error)
+        return res.status(500).json(error)
+    }
+
+
+
+
+}
+
+
+
+
+
+export default { nearme, getCity }
+
+

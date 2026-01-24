@@ -11,9 +11,17 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.36.1",
     "express": "^5.2.1",
+    "ioredis": "^5.9.2",
     "maxmind": "^5.0.3",
     "mongoose": "^9.0.2",
+    "rate-limiter-flexible": "^9.0.1",
     "redis": "^5.10.0"
+  },
+  "scripts": {
+    "dev": "NODE_ENV=development bun run --watch ./src/index.ts",
+    "prod": "NODE_ENV=production bun run ./src/index.ts"
   }
 }
