@@ -38,7 +38,3 @@ export function Debug(msg: string) {
     process.stdout.write(`${date()} ${GRAY}[DEBUG]${RESET} ${msg}\n`);
   }
 }
-Info("Mensaje de info desde Bun");
-Alert("Mensaje de alerta desde Bun");
-Error("Mensaje de error desde Bun");
-Debug("Mensaje de debug desde Bun");
