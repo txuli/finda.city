@@ -20,9 +20,8 @@ Finda.city is a geographic data API that provides information about countries an
 - **Runtime**: [Bun](https://bun.sh)
 - **Framework**: Express.js
 - **Database**: MongoDB with Mongoose
-- **Cache**: Redis
 - **Language**: TypeScript
-- **Geolocation**: MaxMind
+
 
 ## API Endpoints
 
@@ -60,7 +59,6 @@ Returns a list of all countries in the database.
     "continent": "Europe",
     "lat": 40.4,
     "lon": -3.7,
-    "wikiId": "Q29"
   }
 ]
 ```
@@ -91,7 +89,6 @@ Get information about a specific country.
     "continent": "Europe",
     "lat": 40.4,
     "lon": -3.7,
-    "wikiId": "Q29"
   }
 ]
 ```
@@ -165,7 +162,7 @@ GET /getCity?minPopulation=1000000&maxPopulation=5000000
 ### Prerequisites
 - [Bun](https://bun.sh) installed
 - MongoDB instance running
-- Redis instance running (optional, for caching)
+- Redis instance running (optional, for ratelimit)
 
 ### Setup
 
@@ -227,28 +224,5 @@ The API will be running at `http://localhost:3000`
 }
 ```
 
-## Development
-
-The project structure:
-```
-finda.city/
-├── src/
-│   ├── index.ts           # Entry point
-│   ├── config/
-│   │   └── db.ts         # Database configuration
-│   ├── controllers/
-│   │   ├── city.ts       # City endpoints logic
-│   │   └── country.ts    # Country endpoints logic
-│   ├── models/
-│   │   ├── city.ts       # City schema
-│   │   └── country.ts    # Country schema
-│   ├── routes/
-│   │   └── index.ts      # API routes
-│   ├── types/
-│   │   └── requests.ts   # TypeScript types
-│   └── utils/
-└── wikiQueries/
-    └── queries.ts         # Wikipedia/Wikidata integration
-```
 
 
