@@ -8,7 +8,10 @@ import { getCityFromWiki } from "../wikiQueries/queries";
 import { Alert, Debug } from "../utils/logger";
 import { Info } from "../utils/logger";
 import { Error } from "../utils/logger";
+import { log } from 'discord-logify';
+const logger = new log()
 const nearme = async (req: Request, res: Response, next: NextFunction) => {
+    const maxDistance = req.query.max ? req.query.max : 100000
     const forwardedFor = req.headers['x-forwarded-for'];
     const ip = (typeof forwardedFor === 'string' ? forwardedFor : '').split(',')[0];
     const coords = await fetch('http://ip-api.com/json/' + ip, {
@@ -28,7 +31,7 @@ const nearme = async (req: Request, res: Response, next: NextFunction) => {
                     type: "Point",
                     coordinates: [coordsResponse.lon, coordsResponse.lat]
                 },
-                $maxDistance: 100000
+                $maxDistance: maxDistance
             }
         }
     }).limit(5).lean();
@@ -75,10 +78,25 @@ const getCity = async (req: Request, res: Response, next: NextFunction) => {
         if (!Number.isNaN(maxPopulation)) {
             filter.population = { ...(filter.population ?? {}), $lte: maxPopulation };
         }
-        const result = await City.find(filter, { _id: 0, country: 0 }).limit(pageSize)
+        const result = await City.find(filter, { country: 0 }).limit(pageSize)
             .skip((page - 1) * pageSize);
-        //if there is not a response of an existing city in the db find the data on wiki
+        /* if is outdated the data it update from the wiki */
+        if (result[0]?.updateTime != null && result[0]?.updateTime < new Date()) {
+            logger.Info(`updating ${result[0]?.city}`)
+            wikiRs = await getCityFromWiki(countryId?.wikiId || "", city.charAt(0).toUpperCase() + city.slice(1));
+            const date = new Date();
+            date.setFullYear(date.getFullYear() + 1);
+            try {
+                await City.updateOne({ _id: result[0]._id }, {
+                    population: wikiRs?.population,
+                    updateTime: date
 
+                })
+            } catch (error) {
+                logger.Error(`fatal error updating ${result[0]?.city}`)
+            }
+        }
+        //if there is not a response of an existing city in the db find the data on wiki
         if (result.length == 0) {
 
             wikiRs = await getCityFromWiki(countryId?.wikiId || "", city.charAt(0).toUpperCase() + city.slice(1));
@@ -96,8 +114,8 @@ const getCity = async (req: Request, res: Response, next: NextFunction) => {
             Info(`the info of ${wikiRs?.cityLabel} has been added into db`)
             Debug(`has been served info of ${wikiRs?.cityLabel}`)
         }
-        Debug(`the info of ${id} has been served`)
-        console.log("alkjdshf")
+
+        logger.Info(`the info of ${id} has been served`)
         // await client.set(id, JSON.stringify(result))
         return res.json(result)
     } catch (error) {

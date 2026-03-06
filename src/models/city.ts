@@ -31,6 +31,10 @@ const citySchema = new mongoose.Schema(
             type: Number,
             require:true
         },
+        updateTime:{
+            type:Date,
+            default: new Date()
+        }
     }
 )
 const City = mongoose.model("cities", citySchema, "Cities");

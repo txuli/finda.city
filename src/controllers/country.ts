@@ -1,18 +1,20 @@
 import type { Request, Response, NextFunction } from "express";
+import { log } from 'discord-logify';
 import { Mongoose } from "mongoose";
 import Country from "../models/country";
 import connection from "../config/db"
 import type { CountryType } from "../types/requests";
 import {getCountriesFromWiki} from "../wikiQueries/queries"
+const logger= new log()
 const getCountries = async (_req: Request, res: Response, next: NextFunction) => {
-
+ 
 
   try {
     await connection
     const result = await Country.find().lean();
     return res.json(result);
   } catch (error) {
-    return res.status(500).send("server errror")
+    return res.status(500).send("server error")
   }
 };
 const getCountry = async (req: Request, res: Response, next: NextFunction) => {
@@ -21,9 +23,10 @@ let country= req.query.country as string
   try {
     await connection
     const result = await Country.find({ 'CountryLabel': country.toLocaleLowerCase(), })
-    return res.json(result);
+    
+    return res.json(result[0]);
   } catch (error) {
-    return res.status(500).send("server errror")
+    return res.status(500).send("server error")
   }
 
 
@@ -96,8 +99,11 @@ const getIdWiki = async (_req: Request, res: Response, next: NextFunction) => {
     }
 
   } catch (error) {
-    res.status(200).json(error)
+    res.status(500).json(error)
+    logger.Error(error as string)
   }
+
+
   return res.status(200).json(wikiRs)
 
 

@@ -1,8 +1,11 @@
 import mongoose from "mongoose"
 import Redis from 'ioredis';
+import { log } from "discord-logify";
+
+const logger= new log()
 const connection = mongoose.connect(process.env.DB_CONNECTION || "")
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection error", err));
+  .then(() => logger.Info("MongoDB connected"))
+  .catch((err) => logger.Error(`MongoDB connection error, ${err}`));
 
 export default connection 
 
@@ -14,9 +17,9 @@ export const redisClient = new Redis({
 });
 
 redisClient.on('connect', () => {
-  console.log('Redis connected');
+  logger.Info('Redis connected');
 });
 
 redisClient.on('error', (err) => {
-  console.error('Redis connection error:', err);
+  logger.Error(`Redis connection error: ${err}`);
 });
