@@ -11,7 +11,7 @@ export default connection
 
 export const redisClient = new Redis({
   host: 'redis',         // o el hostname del contenedor si estás en docker-compose
-  port: 26739,
+  port: 6379,
   password: process.env.REDIS_PASSWD,
   enableOfflineQueue: false, // opcional, pero recomendable para rate limiting
 });
