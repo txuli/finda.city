@@ -10,10 +10,10 @@ const connection = mongoose.connect(process.env.DB_CONNECTION || "")
 export default connection 
 
 export const redisClient = new Redis({
-  host: 'redis',         // o el hostname del contenedor si estás en docker-compose
-  port: 6379,
+  host: process.env.REDIS_HOST,
+  port: Number(process.env.REDIS_PORT),
   password: process.env.REDIS_PASSWD,
-  enableOfflineQueue: false, // opcional, pero recomendable para rate limiting
+  enableOfflineQueue: false,
 });
 
 redisClient.on('connect', () => {
