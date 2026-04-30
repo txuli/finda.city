@@ -1,4 +1,4 @@
-# Finda.city API
+# GeoHub API
 
 A RESTful API for discovering countries and cities worldwide, with geolocation features and Wikipedia data integration.
 
