@@ -4,10 +4,10 @@ import { Mongoose } from "mongoose";
 import Country from "../models/country";
 import connection from "../config/db"
 import type { CountryType } from "../types/requests";
-import {getCountriesFromWiki} from "../wikiQueries/queries"
-const logger= new log()
+import { getCountriesFromWiki } from "../wikiQueries/queries"
+const logger = new log()
 const getCountries = async (_req: Request, res: Response, next: NextFunction) => {
- 
+
 
   try {
     await connection
@@ -18,18 +18,30 @@ const getCountries = async (_req: Request, res: Response, next: NextFunction) =>
   }
 };
 const getCountry = async (req: Request, res: Response, next: NextFunction) => {
-let country= req.query.country as string
+  let country = req.query.country as string
   if (!country) return res.status(430).send("country needed")
   try {
     await connection
     const result = await Country.find({ 'CountryLabel': country.toLocaleLowerCase(), })
-    
     return res.json(result[0]);
   } catch (error) {
     return res.status(500).send("server error")
   }
 
 
+}
+const getRandomCountries = async (req: Request, res: Response, next: NextFunction) => {
+  const limit = Math.min(parseInt(req.query.limit as string) || 1, 50);
+  try {
+    await connection;
+    const count = await Country.countDocuments();
+    const result = await Country.aggregate([
+      { $sample: { size: limit } }
+    ]);
+    return res.json(limit === 1 ? result[0] : result);
+  } catch (error) {
+    return res.status(500).send("server error");
+  }
 }
 //endpoint to update the database with wikipedia data
 const getIdWiki = async (_req: Request, res: Response, next: NextFunction) => {
@@ -113,4 +125,4 @@ const getIdWiki = async (_req: Request, res: Response, next: NextFunction) => {
 }
 
 
-export default { getCountries, getCountry, getIdWiki }
+export default { getCountries, getCountry, getIdWiki, getRandomCountries }

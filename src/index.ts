@@ -13,6 +13,6 @@ app.use("/", routes)
 
 
 const logger= new log()
-const port = Number(process.env.PORT ?? 3000);
+const port = Number(process.env.PORT ?? 3005);
 app.listen(port, () => logger.Info(`API running on http://localhost:${port}`));
 export default app;

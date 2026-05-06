@@ -38,6 +38,19 @@ const nearme = async (req: Request, res: Response, next: NextFunction) => {
 
     return res.json(result)
 }
+const getRandomCities = async (req: Request, res: Response, next: NextFunction) => {
+  const limit = Math.min(parseInt(req.query.limit as string) || 1, 50);
+  try {
+    await connection;
+    const count = await City.countDocuments();
+    const result = await City.aggregate([
+      { $sample: { size: limit } }
+    ]);
+    return res.json(limit === 1 ? result[0] : result);
+  } catch (error) {
+    return res.status(500).send("server error");
+  }
+}
 
 const getCity = async (req: Request, res: Response, next: NextFunction) => {
 
@@ -132,6 +145,6 @@ const getCity = async (req: Request, res: Response, next: NextFunction) => {
 
 
 
-export default { nearme, getCity }
+export default { nearme, getCity, getRandomCities }
 
 
