@@ -7,7 +7,7 @@ export const routes = Router();
 //routes.get('/getIdWiki', Country.getIdWiki)
 routes.get('/getCountries', Country.getCountries);
 routes.get('/getCountry', Country.getCountry)
-routes.get('/getRandomCounty', Country.getRandomCountries)
+routes.get('/getRandomCountry', Country.getRandomCountries)
 routes.get('/nearme', City.nearme)
 routes.get('/getCity', City.getCity)
 routes.get('/getrandomCity', City.getRandomCities)
