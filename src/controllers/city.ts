@@ -39,17 +39,18 @@ const nearme = async (req: Request, res: Response, next: NextFunction) => {
     return res.json(result)
 }
 const getRandomCities = async (req: Request, res: Response, next: NextFunction) => {
-  const limit = Math.min(parseInt(req.query.limit as string) || 1, 50);
-  try {
-    await connection;
-    const count = await City.countDocuments();
-    const result = await City.aggregate([
-      { $sample: { size: limit } }
-    ]);
-    return res.json(limit === 1 ? result[0] : result);
-  } catch (error) {
-    return res.status(500).send("server error");
-  }
+    const limit = Math.min(parseInt(req.query.limit as string) || 1, 50);
+    try {
+        await connection;
+        const count = await City.countDocuments();
+        const result = await City.aggregate([
+            { $sample: { size: limit } },
+            { $project: { country: 0, _id: 0, updateTime: 0  } }
+        ]);
+        return res.json(limit === 1 ? result[0] : result);
+    } catch (error) {
+        return res.status(500).send("server error");
+    }
 }
 
 const getCity = async (req: Request, res: Response, next: NextFunction) => {
@@ -91,7 +92,7 @@ const getCity = async (req: Request, res: Response, next: NextFunction) => {
         if (!Number.isNaN(maxPopulation)) {
             filter.population = { ...(filter.population ?? {}), $lte: maxPopulation };
         }
-        const result = await City.find(filter, { country: 0 }).limit(pageSize)
+        const result = await City.find(filter, { country: 0, _id: 0, updateTime: 0 }).limit(pageSize)
             .skip((page - 1) * pageSize);
         /* if is outdated the data it update from the wiki */
         if (result[0]?.updateTime != null && result[0]?.updateTime < new Date()) {

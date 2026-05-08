@@ -37,6 +37,8 @@ export interface CityRow {
   cityLabel: string;
   countryLabel?: string;
   population?: number;
+  iso2:string;
+  timezone:string;
   lat?: number;
   lon?: number;
 }

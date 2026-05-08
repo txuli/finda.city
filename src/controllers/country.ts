@@ -11,7 +11,7 @@ const getCountries = async (_req: Request, res: Response, next: NextFunction) =>
 
   try {
     await connection
-    const result = await Country.find().lean();
+    const result = await Country.find({}, { countryLabel: 0, _id: 0, updateTime: 0, wikiId: 0 }).lean();
     return res.json(result);
   } catch (error) {
     return res.status(500).send("server error")
@@ -22,7 +22,7 @@ const getCountry = async (req: Request, res: Response, next: NextFunction) => {
   if (!country) return res.status(430).send("country needed")
   try {
     await connection
-    const result = await Country.find({ 'CountryLabel': country.toLocaleLowerCase(), })
+    const result = await Country.find({ 'CountryLabel': country.toLocaleLowerCase() }, { countryLabel: 0, _id: 0, updateTime: 0, wikiId: 0 })
     return res.json(result[0]);
   } catch (error) {
     return res.status(500).send("server error")
@@ -36,7 +36,8 @@ const getRandomCountries = async (req: Request, res: Response, next: NextFunctio
     await connection;
     const count = await Country.countDocuments();
     const result = await Country.aggregate([
-      { $sample: { size: limit } }
+      { $sample: { size: limit } },
+      { $project: { countryLabel: 0, _id: 0, updateTime: 0, wikiId:0  } }
     ]);
     return res.json(limit === 1 ? result[0] : result);
   } catch (error) {
