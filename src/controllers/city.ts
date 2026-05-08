@@ -34,7 +34,7 @@ const nearme = async (req: Request, res: Response, next: NextFunction) => {
                 $maxDistance: maxDistance
             }
         }
-    }).limit(5).lean();
+    }, { country: 0, _id: 0, updateTime: 0 }).limit(5).lean();
 
     return res.json(result)
 }
