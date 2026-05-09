@@ -19,6 +19,7 @@
     "discord-logify": "^0.2.1",
     "express": "^5.2.1",
     "ioredis": "^5.9.2",
+    "ip-location-api": "^4.0.4",
     "maxmind": "^5.0.5",
     "mongoose": "^9.1.6",
     "rate-limiter-flexible": "^9.1.0",

@@ -8,19 +8,16 @@ import { getCityFromWiki } from "../wikiQueries/queries";
 import { Alert, Debug } from "../utils/logger";
 import { Info } from "../utils/logger";
 import { Error } from "../utils/logger";
+import { lookup } from 'ip-location-api'
 import { log } from 'discord-logify';
 const logger = new log()
 const nearme = async (req: Request, res: Response, next: NextFunction) => {
     const maxDistance = req.query.max ? req.query.max : 100000
     const forwardedFor = req.headers['x-forwarded-for'];
-    const ip = (typeof forwardedFor === 'string' ? forwardedFor : '').split(',')[0];
-    const coords = await fetch('http://ip-api.com/json/' + ip, {
-        headers: {
-            'User-Agent': 'curl/7.79.1'
-        }
-    })
+    const ip = (typeof forwardedFor === 'string' ? forwardedFor : '').split(',')[0]||"";
+    const coords = await lookup(ip)
 
-    const coordsResponse = (await coords.json()) as response
+    
 
     connection
 
@@ -29,7 +26,7 @@ const nearme = async (req: Request, res: Response, next: NextFunction) => {
             $near: {
                 $geometry: {
                     type: "Point",
-                    coordinates: [coordsResponse.lon, coordsResponse.lat]
+                    coordinates: [coords?.longitude, coords?.latitude]
                 },
                 $maxDistance: maxDistance
             }
@@ -45,7 +42,7 @@ const getRandomCities = async (req: Request, res: Response, next: NextFunction) 
         const count = await City.countDocuments();
         const result = await City.aggregate([
             { $sample: { size: limit } },
-            { $project: { country: 0, _id: 0, updateTime: 0  } }
+            { $project: { cityLabel: 0, _id: 0, updateTime: 0  } }
         ]);
         return res.json(limit === 1 ? result[0] : result);
     } catch (error) {
@@ -92,7 +89,7 @@ const getCity = async (req: Request, res: Response, next: NextFunction) => {
         if (!Number.isNaN(maxPopulation)) {
             filter.population = { ...(filter.population ?? {}), $lte: maxPopulation };
         }
-        const result = await City.find(filter, { country: 0, _id: 0, updateTime: 0 }).limit(pageSize)
+        const result = await City.find(filter, { country: 0, _id: 0, updateTime: 0 , fullData:0}).limit(pageSize)
             .skip((page - 1) * pageSize);
         /* if is outdated the data it update from the wiki */
         if (result[0]?.updateTime != null && result[0]?.updateTime < new Date()) {

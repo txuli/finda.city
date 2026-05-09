@@ -37,7 +37,7 @@ const getRandomCountries = async (req: Request, res: Response, next: NextFunctio
     const count = await Country.countDocuments();
     const result = await Country.aggregate([
       { $sample: { size: limit } },
-      { $project: { countryLabel: 0, _id: 0, updateTime: 0, wikiId:0  } }
+      { $project: { CountryLabel: 0, _id: 0, updateTime: 0, wikiId:0  } }
     ]);
     return res.json(limit === 1 ? result[0] : result);
   } catch (error) {
