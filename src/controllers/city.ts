@@ -8,40 +8,35 @@ import { getCityFromWiki } from "../wikiQueries/queries";
 import { Alert, Debug } from "../utils/logger";
 import { Info } from "../utils/logger";
 import { Error } from "../utils/logger";
-import { lookup } from 'ip-location-api'
 import { log } from 'discord-logify';
 const logger = new log()
 const nearme = async (req: Request, res: Response, next: NextFunction) => {
-    const maxDistance = req.query.max ? Number(req.query.max) : 100000
+    const maxDistance = req.query.max ? req.query.max : 100000
     const forwardedFor = req.headers['x-forwarded-for'];
-    logger.Info(`request from ${forwardedFor} to /nearme with maxDistance ${maxDistance}`)
-    const ip = (typeof forwardedFor === 'string' ? forwardedFor : '').split(',')[0] || "";
-
-    try {
-        const coords = await lookup(ip)
-        if (!coords?.latitude || !coords?.longitude) {
-            return res.status(400).json("could not determine location from IP")
+    const ip = (typeof forwardedFor === 'string' ? forwardedFor : '').split(',')[0];
+    const coords = await fetch('http://ip-api.com/json/' + ip, {
+        headers: {
+            'User-Agent': 'curl/7.79.1'
         }
+    })
 
-        await connection
+    const coordsResponse = (await coords.json()) as response
 
-        const result = await City.find({
-            location: {
-                $near: {
-                    $geometry: {
-                        type: "Point",
-                        coordinates: [coords.longitude, coords.latitude]
-                    },
-                    $maxDistance: maxDistance
-                }
+    connection
+
+    const result = await City.find({
+        location: {
+            $near: {
+                $geometry: {
+                    type: "Point",
+                    coordinates: [coordsResponse.lon, coordsResponse.lat]
+                },
+                $maxDistance: maxDistance
             }
-        }, { country: 0, _id: 0, updateTime: 0 }).limit(5).lean();
+        }
+    }, { country: 0, _id: 0, updateTime: 0 }).limit(5).lean();
 
-        return res.json(result)
-    } catch (error) {
-        logger.Error(`nearme error: ${error}`)
-        return res.status(500).json("server error")
-    }
+    return res.json(result)
 }
 const getRandomCities = async (req: Request, res: Response, next: NextFunction) => {
     const limit = Math.min(parseInt(req.query.limit as string) || 1, 50);
