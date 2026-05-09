@@ -11,7 +11,7 @@ const getCountries = async (_req: Request, res: Response, next: NextFunction) =>
 
   try {
     await connection
-    const result = await Country.find({}, { countryLabel: 0, _id: 0, updateTime: 0, wikiId: 0 }).lean();
+    const result = await Country.find({}, { CountryLabel: 0, _id: 0, updateTime: 0, wikiId: 0 }).lean();
     return res.json(result);
   } catch (error) {
     return res.status(500).send("server error")
@@ -22,7 +22,7 @@ const getCountry = async (req: Request, res: Response, next: NextFunction) => {
   if (!country) return res.status(430).send("country needed")
   try {
     await connection
-    const result = await Country.find({ 'CountryLabel': country.toLocaleLowerCase() }, { countryLabel: 0, _id: 0, updateTime: 0, wikiId: 0 })
+    const result = await Country.find({ 'CountryLabel': { $regex: new RegExp(`^${country}$`, 'i') } }, { CountryLabel: 0, _id: 0, updateTime: 0, wikiId: 0, fullData: 0 }).lean();  
     return res.json(result[0]);
   } catch (error) {
     return res.status(500).send("server error")

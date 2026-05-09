@@ -12,28 +12,36 @@ import { lookup } from 'ip-location-api'
 import { log } from 'discord-logify';
 const logger = new log()
 const nearme = async (req: Request, res: Response, next: NextFunction) => {
-    const maxDistance = req.query.max ? req.query.max : 100000
+    const maxDistance = req.query.max ? Number(req.query.max) : 100000
     const forwardedFor = req.headers['x-forwarded-for'];
-    const ip = (typeof forwardedFor === 'string' ? forwardedFor : '').split(',')[0]||"";
-    const coords = await lookup(ip)
+    logger.Info(`request from ${forwardedFor} to /nearme with maxDistance ${maxDistance}`)
+    const ip = (typeof forwardedFor === 'string' ? forwardedFor : '').split(',')[0] || "";
 
-    
-
-    connection
-
-    const result = await City.find({
-        location: {
-            $near: {
-                $geometry: {
-                    type: "Point",
-                    coordinates: [coords?.longitude, coords?.latitude]
-                },
-                $maxDistance: maxDistance
-            }
+    try {
+        const coords = await lookup(ip)
+        if (!coords?.latitude || !coords?.longitude) {
+            return res.status(400).json("could not determine location from IP")
         }
-    }, { country: 0, _id: 0, updateTime: 0 }).limit(5).lean();
 
-    return res.json(result)
+        await connection
+
+        const result = await City.find({
+            location: {
+                $near: {
+                    $geometry: {
+                        type: "Point",
+                        coordinates: [coords.longitude, coords.latitude]
+                    },
+                    $maxDistance: maxDistance
+                }
+            }
+        }, { country: 0, _id: 0, updateTime: 0 }).limit(5).lean();
+
+        return res.json(result)
+    } catch (error) {
+        logger.Error(`nearme error: ${error}`)
+        return res.status(500).json("server error")
+    }
 }
 const getRandomCities = async (req: Request, res: Response, next: NextFunction) => {
     const limit = Math.min(parseInt(req.query.limit as string) || 1, 50);
